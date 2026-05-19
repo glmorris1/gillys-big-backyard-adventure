@@ -410,12 +410,15 @@ h2 {
   height: 100dvh;
   background: #80e6ff;
   touch-action: manipulation;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
 }
 
 .phaser-host canvas {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  max-width: 100vw;
+  max-height: 100dvh;
 }
 
 @keyframes drift {

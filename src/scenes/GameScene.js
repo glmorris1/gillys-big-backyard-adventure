@@ -6,7 +6,7 @@ import { LEVELS } from '../levels/levelData.js';
 import { Gilly } from '../player/Gilly.js';
 import { saveRun } from '../utilities/storage.js';
 
-const groundY = 540;
+const groundY = 492;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -33,7 +33,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.gravity.y = this.level.gravity;
 
     this.buildWorld();
-    this.gilly = new Gilly(this, 170, groundY - 80);
+    this.gilly = new Gilly(this, 180, groundY - 80);
     this.physics.add.collider(this.gilly.sprite, this.ground);
     this.physics.add.collider(this.gilly.sprite, this.platforms);
     this.physics.add.overlap(this.gilly.sprite, this.pads, this.hitPad, null, this);
@@ -42,8 +42,8 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.gilly.sprite, this.finishLine, this.win, null, this);
 
     this.camera = this.cameras.main;
-    this.camera.setBounds(0, 0, this.level.distance + 900, this.scale.height);
-    this.camera.startFollow(this.gilly.sprite, false, 1, 0.12, -220, 80);
+    this.camera.setBounds(0, 0, this.level.distance + 900, 540);
+    this.camera.startFollow(this.gilly.sprite, true, 0.16, 0.16, 180, 70);
 
     this.makeHud();
     this.makeControls();
@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   buildWorld() {
-    const height = this.scale.height;
+    const height = 540;
     this.add.rectangle(0, 0, this.level.distance + 1000, height, Phaser.Display.Color.HexStringToColor(this.level.palette.sky).color)
       .setOrigin(0)
       .setScrollFactor(0);

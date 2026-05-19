@@ -18,9 +18,10 @@ export function PhaserGame({ level, settings, onExit }) {
       parent: hostRef.current,
       backgroundColor: level.palette.sky,
       scale: {
-        mode: Phaser.Scale.RESIZE,
-        width: hostRef.current.clientWidth,
-        height: hostRef.current.clientHeight,
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 960,
+        height: 540,
       },
       physics: {
         default: 'arcade',
