@@ -1,0 +1,24 @@
+{
+  "name": "gillys-big-backyard-adventure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "homepage": "https://glmorris1.github.io/gillys-big-backyard-adventure/",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "gh-pages": "^6.3.0",
+    "phaser": "^3.90.0",
+    "vite": "^7.1.10",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {}
+}
