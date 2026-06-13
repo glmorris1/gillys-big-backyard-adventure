@@ -125,7 +125,7 @@
     let spriteReady = false;
 
     // ==================== SPRITE ====================
-    appaSprite.src = "";
+    appaSprite.src = "appa.png";
     appaSprite.onload = () => { spriteReady = true; };
     appaSprite.onerror = () => { spriteReady = false; };
 
@@ -210,7 +210,7 @@
           x: W + 20,
           baseY: GROUND_Y - 8,
           phase: 0,
-          jumpH: 80 + Math.random() * 300,   // can go very high, near top of screen
+          jumpH: 80 + Math.random() * 300,
           shot: false
         });
       }
@@ -218,7 +218,6 @@
       for (let fb of firebenders) {
         fb.x -= SCROLL * 0.9;
 
-        // start jump once when on screen
         if (fb.phase === 0 && fb.x < W * 0.75) {
           fb.phase = 0.01;
         }
@@ -227,7 +226,6 @@
           fb.phase += 0.038;
           const cy = fb.baseY - Math.sin(fb.phase * Math.PI) * fb.jumpH;
 
-          // shoot exactly once near the top of the jump
           if (!fb.shot && fb.phase > 0.35 && fb.phase < 0.65) {
             fireballs.push({ x: fb.x + 10, y: cy - 10, vx: -3.6 });
             fb.shot = true;
@@ -235,22 +233,19 @@
           }
 
           fb.cy = cy;
-          if (fb.phase > 1) fb.phase = 1; // stay on ground after jump
+          if (fb.phase > 1) fb.phase = 1;
         }
       }
       firebenders = firebenders.filter(f => f.x > -50);
 
-      // Fireballs
       for (let f of fireballs) f.x += f.vx;
       fireballs = fireballs.filter(f => f.x > -20);
 
-      // Ground / ceiling death
       if (appa.y < 12 || appa.y > GROUND_Y - 8) {
         die();
         return;
       }
 
-      // Pillar collision
       for (let p of pillars) {
         const inX = appa.x > p.x - 10 && appa.x < p.x + 50;
         if (inX && (appa.y < p.gapY - 8 || appa.y > p.gapY + 128 + 8)) {
@@ -259,7 +254,6 @@
         }
       }
 
-      // Fireball collision
       for (let f of fireballs) {
         const dx = appa.x - f.x;
         const dy = appa.y - f.y;
@@ -282,11 +276,9 @@
 
     // ==================== DRAW ====================
     function draw() {
-      // Sky
       ctx.fillStyle = '#7fc4e8';
       ctx.fillRect(0, 0, W, H);
 
-      // Far background mountains (darkest, slowest feel)
       ctx.fillStyle = '#3a5a3a';
       ctx.beginPath();
       ctx.moveTo(0, 310);
@@ -295,7 +287,6 @@
       ctx.lineTo(320, 240); ctx.lineTo(320, 340); ctx.lineTo(0, 340);
       ctx.fill();
 
-      // Mid mountains
       ctx.fillStyle = '#5c7a5c';
       ctx.beginPath();
       ctx.moveTo(0, 300);
@@ -304,7 +295,6 @@
       ctx.lineTo(320, 320); ctx.lineTo(0, 320);
       ctx.fill();
 
-      // Closer mountain layer with more jagged detail
       ctx.fillStyle = '#4a6a4a';
       ctx.beginPath();
       ctx.moveTo(0, 285);
@@ -314,41 +304,30 @@
       ctx.lineTo(320, 310); ctx.lineTo(0, 310);
       ctx.fill();
 
-      // Detailed clouds (puffy, multiple layers for depth)
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
       const cloudX = (frame * 0.4) % (W * 1.2);
-      // Cloud 1
       ctx.beginPath(); ctx.arc(50 - cloudX * 0.3, 85, 14, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(68 - cloudX * 0.3, 78, 18, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(88 - cloudX * 0.3, 82, 13, 0, Math.PI*2); ctx.fill();
-      // Cloud 2
       ctx.beginPath(); ctx.arc(170 - cloudX * 0.25, 110, 12, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(188 - cloudX * 0.25, 102, 17, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(208 - cloudX * 0.25, 108, 11, 0, Math.PI*2); ctx.fill();
-      // Cloud 3 (higher, slower)
       ctx.fillStyle = 'rgba(255,255,255,0.6)';
       ctx.beginPath(); ctx.arc(260 - cloudX * 0.15, 65, 10, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(275 - cloudX * 0.15, 60, 14, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(292 - cloudX * 0.15, 64, 9, 0, Math.PI*2); ctx.fill();
 
-      // Pillars (more detailed rock spires)
       for (let p of pillars) {
         const pw = 46;
         const px = p.x;
-
-        // Top pillar (from top of screen down to gap)
         ctx.fillStyle = '#5c4a3a';
         ctx.fillRect(px, 0, pw, p.gapY);
-
-        // Layered rock texture for top
         ctx.fillStyle = '#4a3a2a';
         for (let i = 1; i < 6; i++) {
           const ly = (p.gapY / 6) * i;
           ctx.fillRect(px + 2, ly - 1, pw - 4, 3);
           if (i % 2 === 0) ctx.fillRect(px + 1, ly + 1, 3, 2);
         }
-
-        // Jagged top cap
         ctx.fillStyle = '#3a2a22';
         ctx.beginPath();
         ctx.moveTo(px - 2, p.gapY);
@@ -360,32 +339,19 @@
         ctx.lineTo(px + pw + 2, p.gapY);
         ctx.closePath();
         ctx.fill();
-
-        // Vertical cracks on top pillar
         ctx.strokeStyle = '#2a2218';
         ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(px + 9, 10);
-        ctx.lineTo(px + 11, p.gapY - 5);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(px + pw - 12, 15);
-        ctx.lineTo(px + pw - 8, p.gapY - 10);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + 9, 10); ctx.lineTo(px + 11, p.gapY - 5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + pw - 12, 15); ctx.lineTo(px + pw - 8, p.gapY - 10); ctx.stroke();
 
-        // Bottom pillar
         const by = p.gapY + 128;
         ctx.fillStyle = '#5c4a3a';
         ctx.fillRect(px, by, pw, H - by);
-
-        // Layered rock texture for bottom
         ctx.fillStyle = '#4a3a2a';
         for (let i = 1; i < 5; i++) {
           const ly = by + ((H - by) / 5) * i;
           ctx.fillRect(px + 2, ly - 1, pw - 4, 3);
         }
-
-        // Jagged bottom cap
         ctx.fillStyle = '#3a2a22';
         ctx.beginPath();
         ctx.moveTo(px - 2, by);
@@ -397,38 +363,21 @@
         ctx.lineTo(px + pw + 2, by);
         ctx.closePath();
         ctx.fill();
-
-        // Vertical cracks on bottom pillar
         ctx.strokeStyle = '#2a2218';
-        ctx.beginPath();
-        ctx.moveTo(px + 10, by + 5);
-        ctx.lineTo(px + 8, H - 10);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(px + pw - 11, by + 10);
-        ctx.lineTo(px + pw - 13, H - 5);
-        ctx.stroke();
-
-        ctx.fillStyle = '#5c4a3a'; // reset
+        ctx.beginPath(); ctx.moveTo(px + 10, by + 5); ctx.lineTo(px + 8, H - 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + pw - 11, by + 10); ctx.lineTo(px + pw - 13, H - 5); ctx.stroke();
       }
 
-      // Firebenders
       ctx.fillStyle = '#9c2a1f';
       for (let fb of firebenders) {
         const y = fb.cy || fb.baseY;
-        // body
         ctx.fillRect(fb.x - 5, y - 12, 12, 14);
-        // head
         ctx.fillStyle = '#222';
         ctx.fillRect(fb.x - 3, y - 20, 8, 8);
         ctx.fillStyle = '#9c2a1f';
-        // arm up when jumping
-        if (fb.phase > 0.2 && fb.phase < 0.8) {
-          ctx.fillRect(fb.x + 6, y - 16, 3, 8);
-        }
+        if (fb.phase > 0.2 && fb.phase < 0.8) ctx.fillRect(fb.x + 6, y - 16, 3, 8);
       }
 
-      // Fireballs
       for (let f of fireballs) {
         ctx.fillStyle = '#ff5500';
         ctx.beginPath();
@@ -440,83 +389,55 @@
         ctx.fill();
       }
 
-      // Appa (sprite or simple vector)
       ctx.save();
       ctx.translate(appa.x, appa.y);
       ctx.rotate(appa.rot);
 
       if (spriteReady) {
-        // Using your latest Appa.png (1536x1024). 
-        // Scaled for the small canvas. Adjust sw/sh if you want it bigger or smaller on screen.
-        // Centered so rotation during flight looks good.
         const sw = 64;
         const sh = 43;
         ctx.drawImage(appaSprite, -sw/2, -sh/2, sw, sh);
       } else {
-        // Improved vector fallback that closely matches the pixel sprite you provided
-        // (cream body, brown patches, horns, head shape, legs, tail)
         ctx.fillStyle = '#f5f0e0';
-        ctx.fillRect(-20, -6, 38, 18); // main body
-
-        // Brown back patch (like in your sprite)
+        ctx.fillRect(-20, -6, 38, 18);
         ctx.fillStyle = '#8b6f47';
         ctx.fillRect(-12, -5, 20, 8);
-        ctx.fillRect(-8, -10, 12, 5); // head top patch
-
-        // Head
+        ctx.fillRect(-8, -10, 12, 5);
         ctx.fillStyle = '#f5f0e0';
         ctx.beginPath();
         ctx.arc(13, 0, 10, -0.3, Math.PI * 1.6);
         ctx.fill();
-
-        // Horns (dark gray like the sprite)
         ctx.fillStyle = '#555';
-        ctx.beginPath();
-        ctx.moveTo(8, -8); ctx.lineTo(3, -14); ctx.lineTo(9, -9); ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(17, -8); ctx.lineTo(22, -14); ctx.lineTo(17, -9); ctx.fill();
-
-        // Eyes
+        ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(3, -14); ctx.lineTo(9, -9); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(17, -8); ctx.lineTo(22, -14); ctx.lineTo(17, -9); ctx.fill();
         ctx.fillStyle = '#222';
         ctx.fillRect(8, -2, 3, 2);
         ctx.fillRect(15, -2, 3, 2);
-
-        // Snout / face
         ctx.fillStyle = '#c5a37a';
         ctx.fillRect(20, -1, 6, 4);
         ctx.fillStyle = '#333';
-        ctx.fillRect(24, 0, 2, 2); // nose
-
-        // Legs (4 visible, dark hooves)
+        ctx.fillRect(24, 0, 2, 2);
         ctx.fillStyle = '#8b6f47';
         ctx.fillRect(-14, 8, 5, 7);
         ctx.fillRect(-4, 8, 5, 7);
         ctx.fillRect(6, 8, 5, 7);
         ctx.fillRect(15, 8, 5, 7);
-
         ctx.fillStyle = '#333';
         ctx.fillRect(-14, 13, 5, 3);
         ctx.fillRect(-4, 13, 5, 3);
         ctx.fillRect(6, 13, 5, 3);
         ctx.fillRect(15, 13, 5, 3);
-
-        // Tail
         ctx.fillStyle = '#f5f0e0';
         ctx.fillRect(-24, -2, 8, 8);
         ctx.fillStyle = '#8b6f47';
-        ctx.fillRect(-26, 2, 4, 4); // tail tip
+        ctx.fillRect(-26, 2, 4, 4);
       }
       ctx.restore();
 
-      // Ground - more detailed with parallax rocks and grass
       ctx.fillStyle = '#6b5a3a';
       ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-
-      // Dirt layer
       ctx.fillStyle = '#4a3a22';
       ctx.fillRect(0, GROUND_Y + 8, W, 12);
-
-      // Scrolling small rocks (parallax feel)
       ctx.fillStyle = '#3a2a1a';
       const rockOffset = (frame * 0.6) % 40;
       for (let i = 0; i < 9; i++) {
@@ -524,33 +445,18 @@
         ctx.fillRect(rx, GROUND_Y + 14 + (i % 3) * 3, 7 + (i % 3), 4);
         ctx.fillRect(rx + 18, GROUND_Y + 19, 4, 3);
       }
-
-      // Grass top edge
       ctx.fillStyle = '#4a6a3a';
       ctx.fillRect(0, GROUND_Y, W, 8);
-
-      // Grass tufts - more detailed
       ctx.strokeStyle = '#3a5a2a';
       ctx.lineWidth = 2;
       const grassOffset = (frame * 0.9) % 30;
       for (let i = -2; i < 14; i++) {
         const gx = (i * 28 - grassOffset) % (W + 40) - 15;
-        // multiple blades per tuft
-        ctx.beginPath();
-        ctx.moveTo(gx, GROUND_Y + 2);
-        ctx.lineTo(gx + 4, GROUND_Y + 9);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(gx + 3, GROUND_Y + 1);
-        ctx.lineTo(gx + 8, GROUND_Y + 10);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(gx + 6, GROUND_Y + 2);
-        ctx.lineTo(gx + 10, GROUND_Y + 8);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx, GROUND_Y + 2); ctx.lineTo(gx + 4, GROUND_Y + 9); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx + 3, GROUND_Y + 1); ctx.lineTo(gx + 8, GROUND_Y + 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx + 6, GROUND_Y + 2); ctx.lineTo(gx + 10, GROUND_Y + 8); ctx.stroke();
       }
 
-      // Score
       if (state === 'play' || state === 'over') {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 26px Courier New';
@@ -558,7 +464,6 @@
         ctx.fillText(score, W/2, 48);
       }
 
-      // Game over overlay
       if (state === 'over') {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 140, W, 180);
@@ -575,9 +480,7 @@
 
     // ==================== LOOP ====================
     function loop() {
-      if (state === 'play' || state === 'over') {
-        update();
-      }
+      if (state === 'play' || state === 'over') update();
       draw();
       requestAnimationFrame(loop);
     }
@@ -607,13 +510,9 @@
     function init() {
       canvas = document.getElementById('game');
       ctx = canvas.getContext('2d');
-
-      // load best
       best = parseInt(localStorage.getItem('flappyAppaBest') || '0', 10);
       const bestEl = document.getElementById('best');
       if (bestEl) bestEl.querySelector('span').textContent = best;
-
-      // input
       canvas.addEventListener('mousedown', handleClick);
       canvas.addEventListener('touchstart', handleClick, {passive: false});
       window.addEventListener('keydown', (e) => {
@@ -626,9 +525,6 @@
           state = 'play';
         }
       });
-
-      // start on splash click (already wired via onclick on button + splash)
-      // initial draw of splash is static
       console.log('%c[Flappy Appa] Ready. Click PLAY to start.', 'color:#0f0');
     }
 
@@ -636,28 +532,19 @@
     window.startGame = function() {
       const splash = document.getElementById('splash');
       const container = document.getElementById('game-container');
-
       if (!splash || !container) return;
-
       splash.style.display = 'none';
       container.style.display = 'block';
-
       reset();
       state = 'play';
-      appa.vy = FLAP * 0.75;   // initial lift
+      appa.vy = FLAP * 0.75;
       flapAnim = 4;
-
-      // seed a couple more pillars so it feels alive right away
-      if (pillars.length < 3) {
-        pillars.push({ x: 380, gapY: 175, passed: false });
-      }
-
+      if (pillars.length < 3) pillars.push({ x: 380, gapY: 175, passed: false });
       beep('flap');
       draw();
       loop();
     };
 
-    // Keyboard space also works on splash (before game starts)
     window.addEventListener('keydown', function(e) {
       const splash = document.getElementById('splash');
       if (splash && splash.style.display !== 'none' &&
@@ -667,7 +554,6 @@
       }
     }, { once: true });
 
-    // Boot
     window.onload = init;
   </script>
 </body>
