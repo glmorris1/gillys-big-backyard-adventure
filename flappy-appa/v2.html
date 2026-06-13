@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Appa</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Courier New", monospace;
+      font-weight: bold;
+      color: #fff;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .splash {
+      text-align: center;
+      background: #111;
+      padding: 40px;
+      border: 8px solid #333;
+      border-radius: 8px;
+      max-width: 380px;
+      cursor: pointer;
+    }
+    .splash h1 {
+      font-size: 42px;
+      margin: 0 0 8px;
+      text-shadow: 3px 3px 0 #000;
+    }
+    .splash .yip {
+      font-size: 14px;
+      color: #ffcc66;
+      margin-bottom: 20px;
+    }
+    .splash button {
+      background: #c33;
+      color: #fff;
+      border: 6px solid #111;
+      font-size: 20px;
+      padding: 12px 50px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      margin: 10px 0 20px;
+      box-shadow: 0 6px 0 #111;
+    }
+    .splash button:active {
+      transform: translateY(3px);
+      box-shadow: 0 3px 0 #111;
+    }
+    .container {
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      border: 8px solid #111;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+    .info {
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #888;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash" class="splash" onclick="startGame()">
+    <h1>FLAPPY<br>APPA</h1>
+    <div class="yip">YIP YIP!</div>
+    
+    <div style="font-size: 60px; margin: 10px 0;">🦬</div>
+    
+    <button onclick="event.stopImmediatePropagation(); startGame();">PLAY</button>
+    
+    <div style="font-size: 10px; line-height: 1.5; color: #aaa;">
+      CLICK / TAP / SPACE TO FLAP<br>
+      AVOID THE ROCK SPIRES AND FIREBALLS
+    </div>
+    
+    <div id="best" style="margin-top: 18px; font-size: 11px; color: #666;">
+      BEST: <span>0</span>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-container" class="container" style="display: none;">
+    <canvas id="game" width="320" height="512"></canvas>
+  </div>
+
+  <script>
+    // ==================== CONFIG ====================
+    const W = 320;
+    const H = 512;
+    const GRAVITY = 0.55;
+    const FLAP = -8.2;
+    const SCROLL = 1.7;
+    const GROUND_Y = H - 70;
+
+    // ==================== STATE ====================
+    let canvas, ctx;
+    let appa = { x: 70, y: 200, vy: 0, rot: 0 };
+    let pillars = [];
+    let firebenders = [];
+    let fireballs = [];
+    let score = 0;
+    let best = 0;
+    let state = 'splash'; // splash, play, over
+    let frame = 0;
+    let flapAnim = 0;
+
+    let appaSprite = new Image();
+    let spriteReady = false;
+
+    // ==================== SPRITE ====================
+    appaSprite.src = "data:image/png;base64,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";
+    appaSprite.onload = () => { spriteReady = true; };
+    appaSprite.onerror = () => { spriteReady = false; };
+
+    // ==================== AUDIO ====================
+    let audio;
+    function beep(type) {
+      try {
+        if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+        const o = audio.createOscillator();
+        const g = audio.createGain();
+        o.connect(g); g.connect(audio.destination);
+
+        if (type === 'flap') {
+          o.type = 'sawtooth'; o.frequency.value = 380; g.gain.value = 0.12;
+          g.gain.linearRampToValueAtTime(0.001, audio.currentTime + 0.18);
+          o.start(); o.stop(audio.currentTime + 0.2);
+        } else if (type === 'score') {
+          o.type = 'square'; o.frequency.value = 780; g.gain.value = 0.15;
+          g.gain.linearRampToValueAtTime(0.001, audio.currentTime + 0.25);
+          o.start(); o.stop(audio.currentTime + 0.26);
+        } else if (type === 'fire') {
+          o.type = 'sawtooth'; o.frequency.value = 140; g.gain.value = 0.08;
+          g.gain.linearRampToValueAtTime(0.001, audio.currentTime + 0.3);
+          o.start(); o.stop(audio.currentTime + 0.32);
+        } else if (type === 'hit') {
+          o.type = 'sine'; o.frequency.value = 90; g.gain.value = 0.3;
+          g.gain.linearRampToValueAtTime(0.001, audio.currentTime + 0.5);
+          o.start(); o.stop(audio.currentTime + 0.55);
+        }
+      } catch(e){}
+    }
+
+    // ==================== RESET ====================
+    function reset() {
+      appa = { x: 70, y: 210, vy: 0, rot: 0 };
+      pillars = [];
+      firebenders = [];
+      fireballs = [];
+      score = 0;
+      frame = 0;
+      flapAnim = 0;
+      state = 'play';
+
+      // initial pillars
+      pillars.push({ x: 280, gapY: 160, passed: false });
+      pillars.push({ x: 460, gapY: 205, passed: false });
+    }
+
+    // ==================== UPDATE ====================
+    function update() {
+      if (state !== 'play') return;
+
+      frame++;
+      flapAnim = Math.max(0, flapAnim - 1);
+
+      // Appa physics
+      appa.vy += GRAVITY;
+      appa.y += appa.vy;
+      appa.rot = Math.max(-0.6, Math.min(1.3, appa.vy * 0.065));
+
+      // Pillar scrolling + spawning
+      for (let p of pillars) p.x -= SCROLL;
+
+      if (pillars.length === 0 || pillars[pillars.length-1].x < 120) {
+        const gy = 90 + Math.random() * 220;
+        pillars.push({ x: W + 30, gapY: gy, passed: false });
+      }
+      pillars = pillars.filter(p => p.x > -60);
+
+      // Score
+      for (let p of pillars) {
+        if (!p.passed && p.x + 40 < appa.x) {
+          p.passed = true;
+          score++;
+          beep('score');
+        }
+      }
+
+      // Firebenders - intermittent, high random jumps, one fireball
+      if (frame % 95 === 0 && firebenders.length < 2 && Math.random() < 0.85) {
+        firebenders.push({
+          x: W + 20,
+          baseY: GROUND_Y - 8,
+          phase: 0,
+          jumpH: 80 + Math.random() * 300,
+          shot: false
+        });
+      }
+
+      for (let fb of firebenders) {
+        fb.x -= SCROLL * 0.9;
+
+        if (fb.phase === 0 && fb.x < W * 0.75) {
+          fb.phase = 0.01;
+        }
+
+        if (fb.phase > 0) {
+          fb.phase += 0.038;
+          const cy = fb.baseY - Math.sin(fb.phase * Math.PI) * fb.jumpH;
+
+          if (!fb.shot && fb.phase > 0.35 && fb.phase < 0.65) {
+            fireballs.push({ x: fb.x + 10, y: cy - 10, vx: -3.6 });
+            fb.shot = true;
+            beep('fire');
+          }
+
+          fb.cy = cy;
+          if (fb.phase > 1) fb.phase = 1;
+        }
+      }
+      firebenders = firebenders.filter(f => f.x > -50);
+
+      for (let f of fireballs) f.x += f.vx;
+      fireballs = fireballs.filter(f => f.x > -20);
+
+      if (appa.y < 12 || appa.y > GROUND_Y - 8) {
+        die();
+        return;
+      }
+
+      for (let p of pillars) {
+        const inX = appa.x > p.x - 10 && appa.x < p.x + 50;
+        if (inX && (appa.y < p.gapY - 8 || appa.y > p.gapY + 128 + 8)) {
+          die();
+          return;
+        }
+      }
+
+      for (let f of fireballs) {
+        const dx = appa.x - f.x;
+        const dy = appa.y - f.y;
+        if (dx*dx + dy*dy < 220) {
+          die();
+          return;
+        }
+      }
+    }
+
+    function die() {
+      if (state !== 'play') return;
+      state = 'over';
+      beep('hit');
+      if (score > best) {
+        best = score;
+        localStorage.setItem('flappyAppaBest', best);
+      }
+    }
+
+    // ==================== DRAW ====================
+    function draw() {
+      ctx.fillStyle = '#7fc4e8';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#3a5a3a';
+      ctx.beginPath();
+      ctx.moveTo(0, 310);
+      ctx.lineTo(40, 240); ctx.lineTo(85, 290); ctx.lineTo(140, 235);
+      ctx.lineTo(190, 295); ctx.lineTo(250, 225); ctx.lineTo(295, 280);
+      ctx.lineTo(320, 240); ctx.lineTo(320, 340); ctx.lineTo(0, 340);
+      ctx.fill();
+
+      ctx.fillStyle = '#5c7a5c';
+      ctx.beginPath();
+      ctx.moveTo(0, 300);
+      ctx.lineTo(55, 215); ctx.lineTo(105, 265); ctx.lineTo(165, 195);
+      ctx.lineTo(225, 270); ctx.lineTo(280, 205); ctx.lineTo(320, 255);
+      ctx.lineTo(320, 320); ctx.lineTo(0, 320);
+      ctx.fill();
+
+      ctx.fillStyle = '#4a6a4a';
+      ctx.beginPath();
+      ctx.moveTo(0, 285);
+      ctx.lineTo(35, 225); ctx.lineTo(78, 260); ctx.lineTo(115, 210);
+      ctx.lineTo(155, 255); ctx.lineTo(195, 195); ctx.lineTo(235, 265);
+      ctx.lineTo(275, 215); ctx.lineTo(310, 270); ctx.lineTo(320, 230);
+      ctx.lineTo(320, 310); ctx.lineTo(0, 310);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      const cloudX = (frame * 0.4) % (W * 1.2);
+      ctx.beginPath(); ctx.arc(50 - cloudX * 0.3, 85, 14, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(68 - cloudX * 0.3, 78, 18, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(88 - cloudX * 0.3, 82, 13, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(170 - cloudX * 0.25, 110, 12, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(188 - cloudX * 0.25, 102, 17, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(208 - cloudX * 0.25, 108, 11, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath(); ctx.arc(260 - cloudX * 0.15, 65, 10, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(275 - cloudX * 0.15, 60, 14, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(292 - cloudX * 0.15, 64, 9, 0, Math.PI*2); ctx.fill();
+
+      for (let p of pillars) {
+        const pw = 46;
+        const px = p.x;
+        ctx.fillStyle = '#5c4a3a';
+        ctx.fillRect(px, 0, pw, p.gapY);
+        ctx.fillStyle = '#4a3a2a';
+        for (let i = 1; i < 6; i++) {
+          const ly = (p.gapY / 6) * i;
+          ctx.fillRect(px + 2, ly - 1, pw - 4, 3);
+          if (i % 2 === 0) ctx.fillRect(px + 1, ly + 1, 3, 2);
+        }
+        ctx.fillStyle = '#3a2a22';
+        ctx.beginPath();
+        ctx.moveTo(px - 2, p.gapY);
+        ctx.lineTo(px + 5, p.gapY - 14);
+        ctx.lineTo(px + 15, p.gapY - 9);
+        ctx.lineTo(px + 25, p.gapY - 16);
+        ctx.lineTo(px + 35, p.gapY - 8);
+        ctx.lineTo(px + pw + 3, p.gapY - 13);
+        ctx.lineTo(px + pw + 2, p.gapY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#2a2218';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(px + 9, 10); ctx.lineTo(px + 11, p.gapY - 5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + pw - 12, 15); ctx.lineTo(px + pw - 8, p.gapY - 10); ctx.stroke();
+
+        const by = p.gapY + 128;
+        ctx.fillStyle = '#5c4a3a';
+        ctx.fillRect(px, by, pw, H - by);
+        ctx.fillStyle = '#4a3a2a';
+        for (let i = 1; i < 5; i++) {
+          const ly = by + ((H - by) / 5) * i;
+          ctx.fillRect(px + 2, ly - 1, pw - 4, 3);
+        }
+        ctx.fillStyle = '#3a2a22';
+        ctx.beginPath();
+        ctx.moveTo(px - 2, by);
+        ctx.lineTo(px + 4, by + 12);
+        ctx.lineTo(px + 18, by + 8);
+        ctx.lineTo(px + 28, by + 15);
+        ctx.lineTo(px + 38, by + 7);
+        ctx.lineTo(px + pw + 2, by + 11);
+        ctx.lineTo(px + pw + 2, by);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#2a2218';
+        ctx.beginPath(); ctx.moveTo(px + 10, by + 5); ctx.lineTo(px + 8, H - 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + pw - 11, by + 10); ctx.lineTo(px + pw - 13, H - 5); ctx.stroke();
+      }
+
+      ctx.fillStyle = '#9c2a1f';
+      for (let fb of firebenders) {
+        const y = fb.cy || fb.baseY;
+        ctx.fillRect(fb.x - 5, y - 12, 12, 14);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(fb.x - 3, y - 20, 8, 8);
+        ctx.fillStyle = '#9c2a1f';
+        if (fb.phase > 0.2 && fb.phase < 0.8) ctx.fillRect(fb.x + 6, y - 16, 3, 8);
+      }
+
+      for (let f of fireballs) {
+        ctx.fillStyle = '#ff5500';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffee44';
+        ctx.beginPath();
+        ctx.arc(f.x - 1, f.y - 1, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.save();
+      ctx.translate(appa.x, appa.y);
+      ctx.rotate(appa.rot);
+
+      if (spriteReady) {
+        const sw = 64;
+        const sh = 43;
+        ctx.drawImage(appaSprite, -sw/2, -sh/2, sw, sh);
+      } else {
+        ctx.fillStyle = '#f5f0e0';
+        ctx.fillRect(-20, -6, 38, 18);
+        ctx.fillStyle = '#8b6f47';
+        ctx.fillRect(-12, -5, 20, 8);
+        ctx.fillRect(-8, -10, 12, 5);
+        ctx.fillStyle = '#f5f0e0';
+        ctx.beginPath();
+        ctx.arc(13, 0, 10, -0.3, Math.PI * 1.6);
+        ctx.fill();
+        ctx.fillStyle = '#555';
+        ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(3, -14); ctx.lineTo(9, -9); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(17, -8); ctx.lineTo(22, -14); ctx.lineTo(17, -9); ctx.fill();
+        ctx.fillStyle = '#222';
+        ctx.fillRect(8, -2, 3, 2);
+        ctx.fillRect(15, -2, 3, 2);
+        ctx.fillStyle = '#c5a37a';
+        ctx.fillRect(20, -1, 6, 4);
+        ctx.fillStyle = '#333';
+        ctx.fillRect(24, 0, 2, 2);
+        ctx.fillStyle = '#8b6f47';
+        ctx.fillRect(-14, 8, 5, 7);
+        ctx.fillRect(-4, 8, 5, 7);
+        ctx.fillRect(6, 8, 5, 7);
+        ctx.fillRect(15, 8, 5, 7);
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-14, 13, 5, 3);
+        ctx.fillRect(-4, 13, 5, 3);
+        ctx.fillRect(6, 13, 5, 3);
+        ctx.fillRect(15, 13, 5, 3);
+        ctx.fillStyle = '#f5f0e0';
+        ctx.fillRect(-24, -2, 8, 8);
+        ctx.fillStyle = '#8b6f47';
+        ctx.fillRect(-26, 2, 4, 4);
+      }
+      ctx.restore();
+
+      ctx.fillStyle = '#6b5a3a';
+      ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+      ctx.fillStyle = '#4a3a22';
+      ctx.fillRect(0, GROUND_Y + 8, W, 12);
+      ctx.fillStyle = '#3a2a1a';
+      const rockOffset = (frame * 0.6) % 40;
+      for (let i = 0; i < 9; i++) {
+        const rx = (i * 42 - rockOffset) % (W + 50) - 20;
+        ctx.fillRect(rx, GROUND_Y + 14 + (i % 3) * 3, 7 + (i % 3), 4);
+        ctx.fillRect(rx + 18, GROUND_Y + 19, 4, 3);
+      }
+      ctx.fillStyle = '#4a6a3a';
+      ctx.fillRect(0, GROUND_Y, W, 8);
+      ctx.strokeStyle = '#3a5a2a';
+      ctx.lineWidth = 2;
+      const grassOffset = (frame * 0.9) % 30;
+      for (let i = -2; i < 14; i++) {
+        const gx = (i * 28 - grassOffset) % (W + 40) - 15;
+        ctx.beginPath(); ctx.moveTo(gx, GROUND_Y + 2); ctx.lineTo(gx + 4, GROUND_Y + 9); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx + 3, GROUND_Y + 1); ctx.lineTo(gx + 8, GROUND_Y + 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx + 6, GROUND_Y + 2); ctx.lineTo(gx + 10, GROUND_Y + 8); ctx.stroke();
+      }
+
+      if (state === 'play' || state === 'over') {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 26px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(score, W/2, 48);
+      }
+
+      if (state === 'over') {
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 140, W, 180);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 18px Courier New';
+        ctx.fillText('CRASHED', W/2, 180);
+        ctx.font = '14px Courier New';
+        ctx.fillText('SCORE ' + score, W/2, 215);
+        ctx.fillText('BEST ' + best, W/2, 235);
+        ctx.font = '12px Courier New';
+        ctx.fillText('CLICK OR SPACE TO TRY AGAIN', W/2, 270);
+      }
+    }
+
+    // ==================== LOOP ====================
+    function loop() {
+      if (state === 'play' || state === 'over') update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // ==================== INPUT ====================
+    function flap() {
+      if (state === 'play') {
+        appa.vy = FLAP;
+        flapAnim = 6;
+        beep('flap');
+      }
+      if (state === 'over') {
+        reset();
+        state = 'play';
+        appa.vy = FLAP * 0.6;
+        flapAnim = 4;
+        beep('flap');
+      }
+    }
+
+    function handleClick(e) {
+      if (e) e.preventDefault();
+      flap();
+    }
+
+    // ==================== INIT ====================
+    function init() {
+      canvas = document.getElementById('game');
+      ctx = canvas.getContext('2d');
+      best = parseInt(localStorage.getItem('flappyAppaBest') || '0', 10);
+      const bestEl = document.getElementById('best');
+      if (bestEl) bestEl.querySelector('span').textContent = best;
+      canvas.addEventListener('mousedown', handleClick);
+      canvas.addEventListener('touchstart', handleClick, {passive: false});
+      window.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Space') {
+          e.preventDefault();
+          flap();
+        }
+        if (e.key.toLowerCase() === 'r' && state === 'over') {
+          reset();
+          state = 'play';
+        }
+      });
+      console.log('%c[Flappy Appa] Ready. Click PLAY to start.', 'color:#0f0');
+    }
+
+    // ==================== START GAME FROM SPLASH ====================
+    window.startGame = function() {
+      const splash = document.getElementById('splash');
+      const container = document.getElementById('game-container');
+      if (!splash || !container) return;
+      splash.style.display = 'none';
+      container.style.display = 'block';
+      reset();
+      state = 'play';
+      appa.vy = FLAP * 0.75;
+      flapAnim = 4;
+      if (pillars.length < 3) pillars.push({ x: 380, gapY: 175, passed: false });
+      beep('flap');
+      draw();
+      loop();
+    };
+
+    window.addEventListener('keydown', function(e) {
+      const splash = document.getElementById('splash');
+      if (splash && splash.style.display !== 'none' &&
+          (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Space')) {
+        e.preventDefault();
+        window.startGame();
+      }
+    }, { once: true });
+
+    window.onload = init;
+  </script>
+</body>
+</html>
