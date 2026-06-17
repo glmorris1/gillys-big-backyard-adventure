@@ -129,11 +129,50 @@
 
     let appaSprite = new Image();
     let spriteReady = false;
+    let appaSource = appaSprite;
 
     // ==================== SPRITE ====================
     appaSprite.src = "appa-clean-20260617.png";
-    appaSprite.onload = () => { spriteReady = true; };
+    appaSprite.onload = () => {
+      appaSource = cleanAppaSprite(appaSprite);
+      spriteReady = true;
+    };
     appaSprite.onerror = () => { spriteReady = false; };
+
+    function cleanAppaSprite(source) {
+      const cleanCanvas = document.createElement('canvas');
+      cleanCanvas.width = source.naturalWidth;
+      cleanCanvas.height = source.naturalHeight;
+      const cleanCtx = cleanCanvas.getContext('2d');
+      cleanCtx.drawImage(source, 0, 0);
+
+      const image = cleanCtx.getImageData(0, 0, cleanCanvas.width, cleanCanvas.height);
+      const data = image.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] / 255;
+        const g = data[i + 1] / 255;
+        const b = data[i + 2] / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const sat = max === 0 ? 0 : (max - min) / max;
+        let hue = 0;
+        if (max !== min) {
+          if (max === r) hue = ((g - b) / (max - min) + (g < b ? 6 : 0)) / 6;
+          else if (max === g) hue = ((b - r) / (max - min) + 2) / 6;
+          else hue = ((r - g) / (max - min) + 4) / 6;
+        }
+
+        const alpha = data[i + 3];
+        const warm = (hue <= 0.18 || hue >= 0.92) && sat <= 0.72;
+        const neutral = sat <= 0.28;
+        const cream = max >= 0.72 && sat <= 0.34;
+        if (alpha < 150 || !(warm || neutral || cream)) {
+          data[i + 3] = 0;
+        }
+      }
+      cleanCtx.putImageData(image, 0, 0);
+      return cleanCanvas;
+    }
 
     // ==================== AUDIO ====================
     const MUSIC_SRC = 'music-20260617.m4a';
@@ -161,7 +200,7 @@
         if (restart) music.currentTime = 0;
         startFallbackMusic();
         music.play()
-          .then(() => stopFallbackMusic())
+          .then(() => {})
           .catch(() => {});
       } catch(e){}
     }
@@ -634,10 +673,10 @@
         // Centered so rotation during flight looks good.
         const sw = 64;
         const sh = 43;
-        const cropBottom = Math.round(appaSprite.naturalHeight * 0.09);
+        const cropBottom = Math.round(appaSource.height * 0.09);
         ctx.drawImage(
-          appaSprite,
-          0, 0, appaSprite.naturalWidth, appaSprite.naturalHeight - cropBottom,
+          appaSource,
+          0, 0, appaSource.width, appaSource.height - cropBottom,
           -sw/2, -sh/2, sw, sh
         );
       } else {
