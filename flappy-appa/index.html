@@ -99,7 +99,7 @@
   <div id="game-container" class="container" style="display: none;">
     <canvas id="game" width="320" height="512"></canvas>
   </div>
-  <audio id="game-music" src="music.m4a" preload="auto" loop playsinline></audio>
+  <audio id="game-music" src="music-20260617.m4a" preload="auto" loop playsinline></audio>
 
   <script>
     // ==================== CONFIG ====================
@@ -131,12 +131,12 @@
     let spriteReady = false;
 
     // ==================== SPRITE ====================
-    appaSprite.src = "appa.png";
+    appaSprite.src = "appa-clean-20260617.png";
     appaSprite.onload = () => { spriteReady = true; };
     appaSprite.onerror = () => { spriteReady = false; };
 
     // ==================== AUDIO ====================
-    const MUSIC_SRC = 'music.m4a';
+    const MUSIC_SRC = 'music-20260617.m4a';
     let gameMusic;
     let synthAudioCtx;
     let synthTimer;
