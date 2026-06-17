@@ -99,7 +99,7 @@
   <div id="game-container" class="container" style="display: none;">
     <canvas id="game" width="320" height="512"></canvas>
   </div>
-  <audio id="game-music" src="music.m4a" preload="auto" loop></audio>
+  <audio id="game-music" src="music.m4a" preload="auto" loop playsinline></audio>
 
   <script>
     // ==================== CONFIG ====================
@@ -138,6 +138,10 @@
     // ==================== AUDIO ====================
     const MUSIC_SRC = 'music.m4a';
     let gameMusic;
+    let synthAudioCtx;
+    let synthTimer;
+    let synthStep = 0;
+    const synthMelody = [392, 440, 523, 440, 349, 392, 330, 294];
 
     function getGameMusic() {
       if (!gameMusic) {
@@ -145,6 +149,7 @@
         gameMusic.loop = true;
         gameMusic.preload = 'auto';
         gameMusic.volume = 0.55;
+        gameMusic.load();
         window.flappyAppaMusic = gameMusic;
       }
       return gameMusic;
@@ -154,7 +159,10 @@
       try {
         const music = getGameMusic();
         if (restart) music.currentTime = 0;
-        music.play().catch(() => {});
+        startFallbackMusic();
+        music.play()
+          .then(() => stopFallbackMusic())
+          .catch(() => {});
       } catch(e){}
     }
 
@@ -163,7 +171,47 @@
         if (!gameMusic) return;
         gameMusic.pause();
         gameMusic.currentTime = 0;
+        stopFallbackMusic();
       } catch(e){}
+    }
+
+    function startFallbackMusic() {
+      try {
+        if (synthTimer) return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        synthAudioCtx = synthAudioCtx || new AudioCtx();
+        if (synthAudioCtx.state === 'suspended') synthAudioCtx.resume();
+
+        const playNote = () => {
+          if (!synthAudioCtx) return;
+          const now = synthAudioCtx.currentTime;
+          const osc = synthAudioCtx.createOscillator();
+          const gain = synthAudioCtx.createGain();
+          const freq = synthMelody[synthStep % synthMelody.length];
+          synthStep++;
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.045, now + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+          osc.connect(gain);
+          gain.connect(synthAudioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        };
+
+        playNote();
+        synthTimer = setInterval(playNote, 360);
+      } catch(e){}
+    }
+
+    function stopFallbackMusic() {
+      if (synthTimer) {
+        clearInterval(synthTimer);
+        synthTimer = null;
+      }
     }
 
     function beep(type) {
@@ -375,7 +423,6 @@
     function die() {
       if (state !== 'play') return;
       state = 'over';
-      stopGameMusic();
       beep('hit');
       if (score > best) {
         best = score;
@@ -586,7 +633,12 @@
         // Centered so rotation during flight looks good.
         const sw = 64;
         const sh = 43;
-        ctx.drawImage(appaSprite, -sw/2, -sh/2, sw, sh);
+        const cropBottom = Math.round(appaSprite.naturalHeight * 0.09);
+        ctx.drawImage(
+          appaSprite,
+          0, 0, appaSprite.naturalWidth, appaSprite.naturalHeight - cropBottom,
+          -sw/2, -sh/2, sw, sh
+        );
       } else {
         // Improved vector fallback that closely matches the pixel sprite you provided
         // (cream body, brown patches, horns, head shape, legs, tail)
@@ -732,7 +784,7 @@
 
     // ==================== LOOP ====================
     function loop() {
-      if (state === 'play' || state === 'over') {
+      if (state === 'play' || state === 'levelclear' || state === 'over') {
         update();
       }
       draw();
