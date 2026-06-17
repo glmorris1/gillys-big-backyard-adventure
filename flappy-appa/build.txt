@@ -1,3 +1,3 @@
-Flappy Appa fix build 2026-06-17
-Commit: c9b7b894e87a378a2a5ec7026b5f5c03046260e7
-Fixes: level transition, music fallback, sprite crop
+Flappy Appa asset build 2026-06-17
+Commit: b99030d5cb23dabdd39a777e1d65498b39e1c064
+Fixes: cleaned Appa sprite and replacement music asset
