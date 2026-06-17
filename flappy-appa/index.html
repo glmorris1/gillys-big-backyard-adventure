@@ -432,6 +432,7 @@
 
     // ==================== DRAW ====================
     function draw() {
+      if (!ctx) return;
       ctx.save();
       if (screenShake > 0) {
         const shake = screenShake > 42 ? 4 : 2;
@@ -850,6 +851,9 @@
       const container = document.getElementById('game-container');
 
       if (!splash || !container) return;
+      if (!canvas) canvas = document.getElementById('game');
+      if (!ctx && canvas) ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
       splash.style.display = 'none';
       container.style.display = 'block';
