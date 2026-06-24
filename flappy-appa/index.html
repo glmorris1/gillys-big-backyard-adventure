@@ -23,6 +23,10 @@
       let html = atob(parts.join('').replace(/\s+/g, ''));
       html = html
         .replace(
+          /const LEVEL_TARGETS = \{ 1: 20, 2: 20, 3: 25 \};/,
+          "const LEVEL_TARGETS = { 1: 15, 2: 15, 3: 15 };"
+        )
+        .replace(
           /const MUSIC_SRC = 'music\.m4a';/,
           "const LEVEL_MUSIC = {\n      1: 'https://opengameart.org/sites/default/files/Juhani%20Junkala%20-%20Epic%20Boss%20Battle%20%5BSeamlessly%20Looping%5D.wav',\n      2: 'https://opengameart.org/sites/default/files/Ireland%27s%20Coast_0.mp3',\n      3: 'https://opengameart.org/sites/default/files/Next%20to%20You.mp3'\n    };\n    const MUSIC_SRC = LEVEL_MUSIC[1];\n\n    function getMusicSrc() {\n      return LEVEL_MUSIC[level] || LEVEL_MUSIC[1];\n    }"
         )
