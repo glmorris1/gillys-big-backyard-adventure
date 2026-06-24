@@ -49,6 +49,7 @@
       patch("string", "best = parseInt(localStorage.getItem('flappyAppaBest') || '0', 10);", "best = parseInt(localStorage.getItem('flappyAppaBest') || '0', 10);\n      loadCheckpoint();", "load checkpoint", null);
       patch("regexAll", "reset\\(1, false\\);", "resetFromCheckpoint();", "restart from checkpoint", 4);
       patch("string", "if (level >= 3) {", "if (level >= 4) {", "win threshold", null);
+      patch("string", "if (appa.y < 12 || appa.y > GROUND_Y - 8) {", "if (appa.y > GROUND_Y - 8) {", "no ceiling death", null);
       patch("string", "if (level === 2 && Math.abs(p.targetGapY - p.gapY) > 0.5) {", "if ((level === 2 || level === 4) && Math.abs(p.targetGapY - p.gapY) > 0.5) {", "level 4 moving gates", null);
       patch("string", "if (level === 1 && frame % 95 === 0 && firebenders.length < 2 && Math.random() < 0.85) {", "if ((level === 1 || level === 4) && frame % 95 === 0 && firebenders.length < 2 && Math.random() < 0.85) {", "level 4 firebenders", null);
       patch("string", "if (level === 2 && frame % 110 === 0 && earthbenders.length < 2 && Math.random() < 0.8) {", "if ((level === 2 || level === 4) && frame % 110 === 0 && earthbenders.length < 2 && Math.random() < 0.8) {", "level 4 earthbenders", null);
